@@ -12,78 +12,85 @@ const createUser = async (req, res) => {
         const {street, city, pincode} = address;
 
         if(!title || !name || !phone || !email || !password){
-            return res.status(400).send({status: false, message: "Provide required data!"})
+            return res.status(400).json({status: false, message: "Provide required data!"})
         }
         if(!validTitle(title)){
-            return res.status(400).send({status: false, message: "Title is not valid"});
+            return res.status(400).json({status: false, message: "Title is not valid"});
         }
         if(!validString(name)){
-            return res.status(400).send({status: false, message: "Enter Valid Name"});
+            return res.status(400).json({status: false, message: "Enter Valid Name"});
         }
         if(!validPhone(phone)){
-            return res.status(400).send({status: false, message: "Enter Valid Number"});
+            return res.status(400).json({status: false, message: "Enter Valid Number"});
         }
         if(!validEmail(email)){
-            return res.status(400).send({status: false, message: "Enter Valid Email"});
+            return res.status(400).json({status: false, message: "Enter Valid Email"});
         }
 
         //Check if Email and Phone already exists
         let findEmail = await userModel.findOne({email: email})
         let findPhone = await userModel.findOne({phone: phone})
         if(findEmail !== null){
-            return res.status(400).send({status: false, message: "Email already exists"});
+            return res.status(400).json({status: false, message: "Email already exists"});
         }
         if(findPhone !== null){
-            return res.status(400).send({status: false, message: "Phone already exists"});
+            return res.status(400).json({status: false, message: "Phone already exists"});
         }
 
 
         if(!validPassword(password)){
-            return res.status(400).send({status: false, message: "Password length must be more than 8 & less than 16"});
+            return res.status(400).json({status: false, message: "Password length must be more than 8 & less than 16"});
         }
         if(!validPincode(pincode)){
-            return res.status(400).send({status: false, message: "Invalid pincode"});
+            return res.status(400).json({status: false, message: "Invalid pincode"});
         }
 
         let user = await userModel.create(data)
-        return res.status(201).send({status: true, data: user});
+        return res.status(201).json({status: true, data: user});
 
     }
     catch(err) {
-        return res.status(500).send({status:false, message: err.message});
+        return res.status(500).json({status:false, message: err.message});
     }
 
 }
 
 
-const loginUser = async (req, res) => {
-    const {email, password} = req.body
+const loginUser = async (req, res) => { 
+    try{
+        const {email, password} = req.body
 
-    if(!email){
-        return res.status(400).send({status: false, message: "Enter valid email"})
+        if(!email){
+            return res.status(400).json({status: false, message: "Enter valid email"})
+        }
+        if(!password){
+            return res.status(400).json({status: false, message: "Enter valid password"})
+        }
+
+        let user = await userModel.findOne({email: email, password: password})
+
+        if(!user){
+            return res.status(400).json({status: false, message: "Invalid email or password"})
+        }
+        console.log(process.env.SECRET_KEY)
+        let token = jwt.sign({
+            userId : user._id.toString()
+        },
+        process.env.SECRET_KEY,
+        {expiresIn: "24h"}
+        )
+        res.setHeader('x-api-key', token)
+        let decodedToken = jwt.verify(token, process.env.SECRET_KEY)
+
+        const expDate = new Date(decodedToken.exp * 1000);
+        const iatDate = new Date(decodedToken.iat * 1000);
+
+        return res.status(200).json({status: true, data:{token: token, userId: decodedToken.userId, exp: expDate.toISOString(), iat: iatDate.toISOString()}})
     }
-    if(!password){
-        return res.status(400).send({status: false, message: "Enter valid password"})
+    catch(err){
+        return res.status(500).json({status: false, message: err.message})
     }
-
-    let user = await userModel.findOne({email: email, password: password})
-
-    if(!user){
-        return res.status(400).send({status: false, message: "Invalid email or password"})
-    }
-
-    let token = jwt.sign({
-        userId : user._id.toString()
-    },
-    process.env.SECRET_KEY,
-    {expiresIn: "24h"}
-    )
-    res.setHeader('myToken', token)
-    let decodedToken = jwt.verify(token, process.env.SECRET_KEY)
-
-    return res.status(200).send({status: true, data:{token: token, userId: decodedToken.userId, exp: decodedToken.exp, iat: decodedToken.iat}})
-
-
+    
 }
 
 

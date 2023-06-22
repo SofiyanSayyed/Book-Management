@@ -10,7 +10,7 @@ const createBook = async (req, res) => {
     try{
         let data = req.body
         if(!data){
-            return res.status(400).send({status: false, message: "Please provide the data"})
+            return res.status(400).json({status: false, message: "Please provide the data"})
         }
 
         const {title, excerpt, userId, category, subcategory} = data
@@ -18,37 +18,37 @@ const createBook = async (req, res) => {
         let ISBN = myISBN()  //Generating unique ISBN and assigning it in ISBN
 
         if(!title || !excerpt || !userId || !category || !subcategory){
-            return res.status(400).send({status:false, message: "Enter all required fields"})
+            return res.status(400).json({status:false, message: "Enter all required fields"})
         }
 
         if(!validString(title)){
-            return res.status(400).send({status: false, message: "Invalid Title"})
+            return res.status(400).json({status: false, message: "Invalid Title"})
         }
 
         let isTitle = await bookModel.findOne({title: title})
         if(isTitle !== null){
-            return res.status(400).send({status: false, message: "Same Title exists, Try Different Title"})
+            return res.status(400).json({status: false, message: "Same Title exists, Try Different Title"})
         }
 
         if(!validString(excerpt)){
-            return res.status(400).send({status: false, message: "Enter valid data in excerpt"});
+            return res.status(400).json({status: false, message: "Enter valid data in excerpt"});
         }
 
         if(!validObjectId(userId)){
-            return res.status(400).send({status: false, message: "Id is not Valid"});
+            return res.status(400).json({status: false, message: "Id is not Valid"});
         }
 
         let isId = await userModel.findById(userId);
         if(isId === null){
-            return res.status(400).send({status: false, message: "User not found"});
+            return res.status(400).json({status: false, message: "User not found"});
         }
 
         if(!validString(category)){
-            return res.sataus(400).send({status: false, message: "Category is not valid"})
+            return res.sataus(400).json({status: false, message: "Category is not valid"})
         }
 
         if(!validString(subcategory)){
-            return res.sataus(400).send({status: false, message: "Subcategory is not valid"})
+            return res.sataus(400).json({status: false, message: "Subcategory is not valid"})
         }
 
         let releasedAt = moment().format('YYYY-MM-DD');
@@ -63,12 +63,12 @@ const createBook = async (req, res) => {
             releasedAt: releasedAt
         });
 
-        return res.status(201).send({status: true, data: book})
+        return res.status(201).json({status: true, data: book})
 
 
     }
     catch(err){
-        return res.status(500).send({status: false, message: err.message})
+        return res.status(500).json({status: false, message: err.message})
     }
     
 }
@@ -83,7 +83,7 @@ const getBooks = async (req, res) => {
         let books = await bookModel.find({$and:[{isDeleted: false}, data]}).sort({title: 1})
 
         if(books.length< 1){
-            return res.status(404).send({status: false, message: "No books found"})
+            return res.status(404).json({status: false, message: "No books found"})
         }
 
         let resData = books.map(book => ({
@@ -95,10 +95,10 @@ const getBooks = async (req, res) => {
             reviews: book.reviews,
             releasedAt : book.releasedAt
         }))
-        return res.status(200).send({status: true, message:"Books list", data: resData})
+        return res.status(200).json({status: true, message:"Books list", data: resData})
     }
     catch(err){
-        return res.status(500).send({status: false, message: err.message})
+        return res.status(500).json({status: false, message: err.message})
     }
 }
 
@@ -106,20 +106,26 @@ const getBooks = async (req, res) => {
 
 const getBookById = async (req, res) => {
 
-    let id = req.params.bookId
+    try{
+        let id = req.params.bookId
+        
+        let bookReviews = await reviewModel.find({isDeleted : false, bookId: id})
 
-    
-    let bookReviews = await reviewModel.find({isDeleted : false, bookId: id})
+        let book = await bookModel.findOne({isDeleted: false, _id: id}).lean();
 
-    let book = await bookModel.findOne({isDeleted: false, _id: id}).lean();
+        if(book === null){
+            return res.status(404).json({status: false, message: "No book found"})
+        }
 
-    if(book === null){
-        return res.status(404).json({status: false, message: "No book found"})
+        book.reviewsData = bookReviews
+
+        return res.status(200).json({status: true, message: "Book and Reviews list", book: book})
+
     }
-
-    book.reviewsData = bookReviews
-
-    return res.status(200).json({status: true, message: "Book and Reviews list", book: book})
+    catch(err){
+        return res.status(500).json({status: false, message:err.message})
+    }
+    
 
 }
 
@@ -133,16 +139,16 @@ const updateBook = async (req, res) => {
         const {title, excerpt} = data
 
         if(Object.keys(data).length == 0) {
-            return res.status(400).send({status: false, message:"Provide data to update"})
+            return res.status(400).json({status: false, message:"Provide data to update"})
         }
 
         if (!data.hasOwnProperty('title') && !data.hasOwnProperty('excerpt')) {
-            return res.status(400).send({status: false, message:"Only title and exerpt can be updated"});
+            return res.status(400).json({status: false, message:"Only title and exerpt can be updated"});
         }
 
         let isTitle = await bookModel.findOne({title: title})
         if(isTitle !== null){
-            return res.status(400).send({status: false, message: "Same Title exists, Try with Different Title"})
+            return res.status(400).json({status: false, message: "Same Title exists, Try with Different Title"})
         }
 
         let releasedAt = moment().format('YYYY-MM-DD')
@@ -156,13 +162,13 @@ const updateBook = async (req, res) => {
             {new: true}
             )
         if(book === null){
-            return res.status(404).send({status:false, message: "No book found or book may deleted"})
+            return res.status(404).json({status:false, message: "No book found or book may deleted"})
         }
 
-        return res.status(200).send({status:true, message: "Success", data: book})
+        return res.status(200).json({status:true, message: "Success", data: book})
     }
     catch(err){
-        return res.status(500).send({status:false, message:err.message});
+        return res.status(500).json({status:false, message:err.message});
     }
     
 
@@ -172,18 +178,25 @@ const updateBook = async (req, res) => {
 
 
 const deleteBook = async (req, res) => {
-    let id = req.params.bookId
 
-    if(!validObjectId(id)){
-        return res.status(400).json({status: false, message: "Please give valid Id"})
+    try{
+        let id = req.params.bookId
+
+        if(!validObjectId(id)){
+            return res.status(400).json({status: false, message: "Please give valid Id"})
+        }
+        
+        let books = await bookModel.findOneAndUpdate({isDeleted: false, _id: id}, {$set: {isDeleted: true, deletedAt: Date.now()}})
+        
+        if(books === null){
+            return res.status(404).json({status: false, message: "No book found"})
+        }
+        return res.status(200).json({status: true, message: "Book Deleted Successfully"}) ;
+    }
+    catch(err){
+        return res.status(500).json({status: false, message: err.message})
     }
     
-    let books = await bookModel.findOneAndUpdate({isDeleted: false, _id: id}, {isDeleted: true})
-    
-    if(books === null){
-        return res.status(404).json({status: false, message: "No book found"})
-    }
-    return res.status(200).json({status: true, message: "Book Deleted Successfully"}) ;
 
 }
 
