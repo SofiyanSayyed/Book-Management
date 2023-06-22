@@ -1,5 +1,6 @@
 const bookModel = require('../models/bookModel')
 const userModel = require('../models/userModel')
+const reviewModel = require('../models/reviewModel')
 const {myISBN} = require('../utils/ISBN')
 const moment = require('moment')
 const {validString, validObjectId} = require('../utils/validation')
@@ -84,7 +85,7 @@ const getBooks = async (req, res) => {
         if(books.length< 1){
             return res.status(404).send({status: false, message: "No books found"})
         }
-        
+
         let resData = books.map(book => ({
             _id : book._id,
             title : book.title,
@@ -103,7 +104,22 @@ const getBooks = async (req, res) => {
 
 
 
-const getBooksById = async (req, res) => {
+const getBookById = async (req, res) => {
+
+    let id = req.params.bookId
+
+    
+    let bookReviews = await reviewModel.find({isDeleted : false, bookId: id})
+
+    let book = await bookModel.findOne({isDeleted: false, _id: id}).lean();
+
+    if(book === null){
+        return res.status(404).json({status: false, message: "No book found"})
+    }
+
+    book.reviewsData = bookReviews
+
+    return res.status(200).json({status: true, message: "Book and Reviews list", book: book})
 
 }
 
@@ -155,4 +171,26 @@ const updateBook = async (req, res) => {
 
 
 
-module.exports = {createBook, getBooks, updateBook}
+const deleteBook = async (req, res) => {
+    let id = req.params.bookId
+
+    if(!validObjectId(id)){
+        return res.status(400).json({status: false, message: "Please give valid Id"})
+    }
+    
+    let books = await bookModel.findOneAndUpdate({isDeleted: false, _id: id}, {isDeleted: true})
+    
+    if(books === null){
+        return res.status(404).json({status: false, message: "No book found"})
+    }
+    return res.status(200).json({status: true, message: "Book Deleted Successfully"}) ;
+
+}
+
+
+
+
+
+
+
+module.exports = {createBook, getBooks, updateBook, getBookById, deleteBook}
