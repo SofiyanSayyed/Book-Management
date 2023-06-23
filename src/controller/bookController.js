@@ -1,7 +1,6 @@
 const bookModel = require('../models/bookModel')
 const userModel = require('../models/userModel')
 const reviewModel = require('../models/reviewModel')
-const {myISBN} = require('../utils/ISBN')
 const moment = require('moment')
 const {validString, validObjectId} = require('../utils/validation')
 
@@ -13,11 +12,10 @@ const createBook = async (req, res) => {
             return res.status(400).json({status: false, message: "Please provide the data"})
         }
 
-        const {title, excerpt, userId, category, subcategory} = data
+        const {title, excerpt, userId, category, subcategory, ISBN, releasedAt} = data
 
-        let ISBN = myISBN()  //Generating unique ISBN and assigning it in ISBN
 
-        if(!title || !excerpt || !userId || !category || !subcategory){
+        if(!title || !excerpt || !userId || !category || !subcategory || !ISBN){
             return res.status(400).json({status:false, message: "Enter all required fields"})
         }
 
@@ -28,6 +26,10 @@ const createBook = async (req, res) => {
         let isTitle = await bookModel.findOne({title: title})
         if(isTitle !== null){
             return res.status(400).json({status: false, message: "Same Title exists, Try Different Title"})
+        }
+        let isISBN = await bookModel.findOne({ISBN: ISBN})
+        if(isISBN !== null){
+            return res.status(400).json({status: false, message: "Same ISBN exists, Try Different ISBN"})
         }
 
         if(!validString(excerpt)){
@@ -51,16 +53,14 @@ const createBook = async (req, res) => {
             return res.sataus(400).json({status: false, message: "Subcategory is not valid"})
         }
 
-        let releasedAt = moment().format('YYYY-MM-DD');
-
         let book = await bookModel.create({
             title: data.title.trim(),
             excerpt: data.excerpt.trim(),
             userId: data.userId.trim(),
             subcategory: data.subcategory.trim(),
             category: data.category.trim(),
-            ISBN: ISBN,
-            releasedAt: releasedAt
+            ISBN: data.ISBN,
+            releasedAt: data.releasedAt
         });
 
         return res.status(201).json({status: true, data: book})
@@ -136,7 +136,7 @@ const updateBook = async (req, res) => {
     try{
         let data = req.body
         let id = req.params.bookId
-        const {title, excerpt} = data
+        const {title, excerpt, ISBN, releasedAt} = data
 
         if(Object.keys(data).length == 0) {
             return res.status(400).json({status: false, message:"Provide data to update"})
@@ -150,11 +150,6 @@ const updateBook = async (req, res) => {
         if(isTitle !== null){
             return res.status(400).json({status: false, message: "Same Title exists, Try with Different Title"})
         }
-
-        let releasedAt = moment().format('YYYY-MM-DD')
-        data.releasedAt = releasedAt
-        let ISBN = myISBN()
-        data.ISBN = ISBN
 
         let book = await bookModel.findOneAndUpdate(
             {isDeleted:false, _id: id},

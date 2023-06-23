@@ -9,8 +9,15 @@ const createUser = async (req, res) => {
     try{
         let data = req.body;
         const {title, name, phone, email, password, address} = data;
-        const {street, city, pincode} = address;
 
+        if(address !== undefined){
+            const {street, city, pincode} = address;
+
+            if(!validPincode(pincode)){
+                return res.status(400).json({status: false, message: "Invalid pincode"});
+            }
+        }
+        
         if(!title || !name || !phone || !email || !password){
             return res.status(400).json({status: false, message: "Provide required data!"})
         }
@@ -41,10 +48,7 @@ const createUser = async (req, res) => {
         if(!validPassword(password)){
             return res.status(400).json({status: false, message: "Password length must be more than 8 & less than 16"});
         }
-        if(!validPincode(pincode)){
-            return res.status(400).json({status: false, message: "Invalid pincode"});
-        }
-
+        
         let user = await userModel.create(data)
         return res.status(201).json({status: true, data: user});
 
@@ -70,7 +74,7 @@ const loginUser = async (req, res) => {
         let user = await userModel.findOne({email: email, password: password})
 
         if(!user){
-            return res.status(400).json({status: false, message: "Invalid email or password"})
+            return res.status(401).json({status: false, message: "Invalid email or password"})
         }
         console.log(process.env.SECRET_KEY)
         let token = jwt.sign({
