@@ -2,7 +2,7 @@ const bookModel = require('../models/bookModel')
 const userModel = require('../models/userModel')
 const reviewModel = require('../models/reviewModel')
 const moment = require('moment')
-const {validString, validObjectId} = require('../utils/validation')
+const {validString, validObjectId, checkDateFormat} = require('../utils/validation')
 
 
 const createBook = async (req, res) => {
@@ -15,7 +15,7 @@ const createBook = async (req, res) => {
         const {title, excerpt, userId, category, subcategory, ISBN, releasedAt} = data
 
 
-        if(!title || !excerpt || !userId || !category || !subcategory || !ISBN){
+        if(!title || !excerpt || !userId || !category || !subcategory || !ISBN || !releasedAt){
             return res.status(400).json({status:false, message: "Enter all required fields"})
         }
 
@@ -40,8 +40,12 @@ const createBook = async (req, res) => {
             return res.status(400).json({status: false, message: "Id is not Valid"});
         }
 
+        if(!checkDateFormat(releasedAt)){
+            return res.status(400).json({status: false, message: "Enter date in YYYY-MM-DD"});
+        }
+
         let isId = await userModel.findById(userId);
-        if(isId === null){
+        if(isId === null){  
             return res.status(400).json({status: false, message: "User not found"});
         }
 

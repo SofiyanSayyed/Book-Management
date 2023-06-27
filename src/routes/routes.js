@@ -11,8 +11,8 @@ router.post("/login",loginUser)
 
 //.........Books Apis................................
 router.post("/books",authentication, createBook)
-router.get("/books", getBooks)
-router.get("/books/:bookId", getBookById)
+router.get("/books",authentication, getBooks)
+router.get("/books/:bookId",authentication, getBookById)
 router.put("/books/:bookId", authentication, authorisation, updateBook)
 router.delete("/books/:bookId", authentication, authorisation, deleteBook)
 

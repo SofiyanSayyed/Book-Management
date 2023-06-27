@@ -10,13 +10,7 @@ const createUser = async (req, res) => {
         let data = req.body;
         const {title, name, phone, email, password, address} = data;
 
-        if(address !== undefined){
-            const {street, city, pincode} = address;
-
-            if(!validPincode(pincode)){
-                return res.status(400).json({status: false, message: "Invalid pincode"});
-            }
-        }
+        
         
         if(!title || !name || !phone || !email || !password){
             return res.status(400).json({status: false, message: "Provide required data!"})
@@ -32,6 +26,21 @@ const createUser = async (req, res) => {
         }
         if(!validEmail(email)){
             return res.status(400).json({status: false, message: "Enter Valid Email"});
+        }
+
+        //if address present
+        if(address !== undefined){
+            const {street, city, pincode} = address;
+            if(typeof address !== 'object' ){
+                return res.status(400).json({status:false, message: "Invalid address"})
+            }
+            if(!street && !city && !pincode){
+                return res.status(400).json({status:false, message: "Invalid address"})
+            }
+
+            if(!validPincode(pincode)){
+                return res.status(400).json({status: false, message: "Invalid pincode"});
+            }
         }
 
         //Check if Email and Phone already exists

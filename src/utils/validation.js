@@ -3,8 +3,9 @@ const mongoose = require('mongoose');
 
 
 const validTitle = (title) => {
-    if(title === "Mr" || "Mrs" || "Miss") return true
-    return false
+    let arr = ["Mr", "Mrs", "Miss"]
+    if(arr.includes(title)) return true
+    false
 }
 
 const validString = (value) =>{
@@ -41,4 +42,11 @@ const validObjectId = (id) => {
     return mongoose.Types.ObjectId.isValid(id);
 }
 
-module.exports = {validTitle, validString, validPhone, validEmail, validPassword, validPincode, validObjectId}
+const checkDateFormat = (date) =>{
+    return /^\d{4}-\d{2}-\d{2}$/.test(date)
+}
+
+
+
+
+module.exports = {validTitle, validString, validPhone, validEmail, validPassword, validPincode, validObjectId, checkDateFormat}
