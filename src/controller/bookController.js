@@ -1,9 +1,29 @@
 const bookModel = require('../models/bookModel')
 const userModel = require('../models/userModel')
 const reviewModel = require('../models/reviewModel')
+const {uploadFile} = require('../aws/aws')
 const moment = require('moment')
 const {validString, validObjectId, checkDateFormat} = require('../utils/validation')
 
+
+const createUrl = async( req, res) => {
+    try{
+        let files= req.files
+        if(files && files.length>0){
+            //upload to s3 and get the uploaded link
+            // res.send the link back to frontend/postman
+            let uploadedFileURL= await uploadFile( files[0] )
+            res.status(201).send({msg: "file uploaded succesfully", data: uploadedFileURL})
+        }
+        else{
+            res.status(400).send({ msg: "No file found" })
+        }
+        
+    }
+    catch(err){
+        res.status(500).send({msg: err})
+    }
+}
 
 const createBook = async (req, res) => {
     try{
@@ -92,7 +112,7 @@ const getBooks = async (req, res) => {
 
         let resData = books.map(book => ({
             _id : book._id,
-            title : book.title,
+            title : book.title, 
             excerpt : book.excerpt,
             userId : book.userId,
             category: book.category,
@@ -142,17 +162,18 @@ const updateBook = async (req, res) => {
         let id = req.params.bookId
         const {title, excerpt, ISBN, releasedAt} = data
 
-        if(Object.keys(data).length == 0) {
+        if(!title && !excerpt && !ISBN && !releasedAt) {
             return res.status(400).json({status: false, message:"Provide data to update"})
         }
 
-        if (!data.hasOwnProperty('title') && !data.hasOwnProperty('excerpt')) {
-            return res.status(400).json({status: false, message:"Only title and exerpt can be updated"});
-        }
-
-        let isTitle = await bookModel.findOne({title: title})
+        let isTitle = await bookModel.findOne({title: data.title})
         if(isTitle !== null){
             return res.status(400).json({status: false, message: "Same Title exists, Try with Different Title"})
+        }
+
+        let isISBN = await bookModel.findOne({ISBN: data.ISBN})
+        if(isISBN !== null){
+            return res.status(400).json({status: false, message: "Same ISBN exists, Try with Different ISBN"})
         }
 
         let book = await bookModel.findOneAndUpdate(
@@ -205,4 +226,4 @@ const deleteBook = async (req, res) => {
 
 
 
-module.exports = {createBook, getBooks, updateBook, getBookById, deleteBook}
+module.exports = {createBook, getBooks, updateBook, getBookById, deleteBook, createUrl}

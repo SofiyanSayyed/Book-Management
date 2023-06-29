@@ -2,14 +2,16 @@ const express = require('express');
 const router = express.Router()
 const {createUser, loginUser} = require('../controller/userController')
 const { authentication, authorisation } = require('../middlewares/auth')
-const {createBook, getBooks, updateBook, getBookById, deleteBook} = require('../controller/bookController')
+const {createBook, getBooks, updateBook, getBookById, deleteBook, createUrl} = require('../controller/bookController')
 const {addReview, updateReview, deleteReview} = require('../controller/reviewController')
+
 
 //..........User Apis................................
 router.post("/register",createUser)
 router.post("/login",loginUser)
 
 //.........Books Apis................................
+router.post("/createUrl", createUrl)
 router.post("/books",authentication, createBook)
 router.get("/books",authentication, getBooks)
 router.get("/books/:bookId",authentication, getBookById)

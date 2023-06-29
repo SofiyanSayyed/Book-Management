@@ -9,7 +9,7 @@ const authentication = async function (req, res, next) {
     try {
       let token = req.headers["x-api-key"];
       if (!token) {
-        res.status(401).json({ status: false, message: "Please log in First " });
+        res.status(401).json({ status: false, message: "Please login First " });
       } else {
         const decodedToken = jwt.verify(
           token,
@@ -37,7 +37,7 @@ const authentication = async function (req, res, next) {
           return res.status(400).json({status:false,message:"Enter valid book id"})
       }
       const uid = await bookModel.findOne({isDeleted:false, _id: bookId}).select({ _id: 0, userId: 1 });
-
+      
       if(uid === null){
         return res.status(403).json({status:false,message:"You are not authorised"})
       }

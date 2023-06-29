@@ -14,7 +14,7 @@ const validString = (value) =>{
     return true;
 }
 
-const validPhone = (value) =>{
+validPhone = (value) =>{
     let stringValue = value.toString();
     if(stringValue.trim().length < 10) return false
     if(!validator.isMobilePhone(stringValue)) return false

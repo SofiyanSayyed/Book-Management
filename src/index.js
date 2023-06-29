@@ -1,11 +1,14 @@
 const express = require('express');
 const mongoose = require('mongoose')
 const route = require('./routes/routes')
+const multer = require('multer');
 require('dotenv').config();
 const {MONGO_STRING, PORT} = process.env
 const app = express()
 
 app.use(express.json())
+
+app.use(multer().any())
 
 app.use('/', route)
 

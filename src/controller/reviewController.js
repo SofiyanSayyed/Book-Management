@@ -1,10 +1,14 @@
 const reviewModel = require('../models/reviewModel')
 const bookModel = require('../models/bookModel')
+const {validObjectId} = require('../utils/validation')
 
 
 const addReview = async (req, res) => {
     try{
         let id = req.params.bookId
+        if(!validObjectId(id)){
+            return res.status(400).json({status: false, message:"invalid id"})
+        }
         let checkBook = await bookModel.findOne({isDeleted: false, _id: id})
         if(checkBook === null){
             return res.status(400).json({status:false, message: "Invalid request, Book id not valid"})
@@ -12,7 +16,7 @@ const addReview = async (req, res) => {
         let data = req.body
         const {review, rating, reviewedBy} = data
 
-        if(!review || !rating){
+        if(!review && !rating){
             return res.status(400).json({status: false, message: "Enter required fields"})
         }
         if(rating < 0 || rating > 5){
@@ -45,6 +49,12 @@ const addReview = async (req, res) => {
 const updateReview = async (req, res) => {
     try{
         let {reviewId, bookId} = req.params
+        if(!validObjectId(reviewId)){
+            return res.status(400).json({status: false, message:"invalid review id"})
+        }
+        if(!validObjectId(bookId)){
+            return res.status(400).json({status: false, message:"invalid book id"})
+        }
         let data = req.body
         if(Object.keys(data).length === 0){
             return res.status(400).json({status: false, message: "Enter data"})
@@ -52,7 +62,7 @@ const updateReview = async (req, res) => {
 
         let myBook = await bookModel.findOne({isDeleted: false, _id: bookId}).lean()
         if(myBook === null){
-            return res.status(400).json({status: false, message: "Book Not Found"})
+            return res.status(404).json({status: false, message: "Book Not Found"})
         }
         let myReview = await reviewModel.findOneAndUpdate({isDeleted: false, _id: reviewId},{$set: data},{new: true})
         if(myReview === null){
@@ -79,9 +89,16 @@ const deleteReview = async (req, res) => {
     try{
         let {reviewId, bookId} = req.params
 
+        if(!validObjectId(reviewId)){
+            return res.status(400).json({status: false, message:"invalid review id"})
+        }
+        if(!validObjectId(bookId)){
+            return res.status(400).json({status: false, message:"invalid book id"})
+        }
+
         let book = await bookModel.findOne({isDeleted: false, _id: bookId})
         if(book ===null){
-            return res.status(400).json({status: false, message: "Book not available/ invalid book"})
+            return res.status(404).json({status: false, message: "Book not available/ invalid book"})
         }
         
         let review = await reviewModel.findOneAndUpdate(
