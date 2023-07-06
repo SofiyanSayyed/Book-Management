@@ -66,8 +66,8 @@ const updateReview = async (req, res) => {
         }
         let myReview = await reviewModel.findOneAndUpdate({isDeleted: false, _id: reviewId},{$set: data},{new: true})
         if(myReview === null){
-            return res.status(400).json({status: false, message: "review Not Found"})
-        }
+            return res.status(404).json({status: false, message: "review Not Found"})
+        }   
         let reviewsData = await reviewModel.find({isDeleted: false, bookId: bookId})
 
         myBook.reviewsData = reviewsData
@@ -107,7 +107,7 @@ const deleteReview = async (req, res) => {
         )
 
         if(review ===null){
-            return res.status(400).json({status: false, message: "review not found or already deleted"})
+            return res.status(404).json({status: false, message: "review not found or already deleted"})
         }
 
         await bookModel.findOneAndUpdate( //Updating reviews count to -1
